@@ -66,5 +66,27 @@ class PerpustakaanSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Seed loans
+        DB::table('loans')->insert([
+            [
+                'user_id' => 3, // ical (anggota)
+                'book_id' => 1, // Laskar Pelangi
+                'loan_date' => Carbon::now()->subDays(3),
+                'return_due_date' => Carbon::now()->addDays(4),
+                'status' => 'dipinjam',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 3, // ical (anggota)
+                'book_id' => 2, // Bumi Manusia
+                'loan_date' => Carbon::now()->subDays(10),
+                'return_due_date' => Carbon::now()->subDays(2),
+                'status' => 'dikembalikan',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 }

@@ -32,6 +32,7 @@ return new class extends Migration
         Schema::create('loans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('user')->onDelete('cascade');
+            $table->foreignId('book_id')->constrained('books')->onDelete('cascade'); // Tambahkan ini
             $table->date('loan_date');
             $table->date('return_due_date');
             $table->enum('status', ['dipinjam', 'dikembalikan'])->default('dipinjam');
