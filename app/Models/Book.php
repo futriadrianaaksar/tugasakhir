@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Models;
+   namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+   use Illuminate\Database\Eloquent\Model;
 
-class Book extends Model
-{
-    protected $fillable = ['title', 'author', 'isbn', 'stock'];
+   class Book extends Model
+   {
+       protected $table = 'books';
+       protected $fillable = ['title', 'author', 'isbn', 'stock'];
 
-    public function loans()
-    {
-        return $this->hasMany(Loan::class);
-    }
-}
+       public function loans()
+       {
+           return $this->hasMany(Loan::class, 'book_id');
+       }
+   }
