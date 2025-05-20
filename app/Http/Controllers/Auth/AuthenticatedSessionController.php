@@ -42,8 +42,8 @@
                $user = Auth::user();
                if ($user->role === 'admin') {
                    return redirect()->route('admin.dashboard');
-               } elseif ($user->role === 'dosen') {
-                   return redirect()->route('dosen.dashboard');
+               } elseif ($user->role === 'petugas') {
+                   return redirect()->route('petugas.dashboard');
                } else {
                    return redirect()->route('mahasiswa.dashboard');
                }
