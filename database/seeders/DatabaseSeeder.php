@@ -2,16 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $users = [
@@ -69,7 +65,11 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            User::create($data);
+            if (!User::where('email', $data['email'])->exists()) {
+                User::create($data);
+            }
         }
+
+        $this->call(BookSeeder::class);
     }
 }

@@ -1,22 +1,22 @@
 <?php
 
-      namespace App\Http\Controllers;
+namespace App\Http\Controllers;
 
-      use Illuminate\Http\Request;
-      use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
-      class DashboardController extends Controller
-      {
-          public function index()
-          {
-              $user = Auth::user();
-
-              if ($user->role === 'admin') {
-                  return view('admin.dashboard');
-              } elseif ($user->role === 'petugas') {
-                  return view('petugas.dashboard');
-              } else {
-                  return view('mahasiswa.dashboard');
-              }
-          }
-      }
+class DashboardController extends Controller
+{
+    public function index()
+    {
+        $role = Auth::user()->role;
+        if ($role === 'admin') {
+            return view('admin.dashboard');
+        } elseif ($role === 'petugas') {
+            return view('petugas.dashboard');
+        } elseif ($role === 'mahasiswa') {
+            return view('mahasiswa.dashboard');
+        }
+        return view('dashboard');
+    }
+}
