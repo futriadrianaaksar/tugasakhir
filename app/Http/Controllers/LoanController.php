@@ -1,23 +1,18 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Loan;
-use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class LoanController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
-        if ($user->role === 'mahasiswa') {
-            // Mahasiswa hanya melihat peminjaman mereka sendiri
-            $loans = Loan::where('user_id', $user->id)->with('book')->get();
+        if (Auth::user()->role === 'mahasiswa') {
+            $loans = Loan::where('user_id', Auth::id())->paginate(10);
         } else {
-            // Admin/petugas melihat semua peminjaman
-            $loans = Loan::with('user', 'book')->get();
+            $loans = Loan::paginate(10);
         }
         return view('loans.index', compact('loans'));
     }
@@ -25,25 +20,22 @@ class LoanController extends Controller
     public function return(Request $request, $loan_id)
     {
         $loan = Loan::findOrFail($loan_id);
-        $user = Auth::user();
+        $loan->status = 'dikembalikan';
 
-        // Hanya mahasiswa pemilik atau petugas yang bisa mengembalikan
-        if ($user->role === 'mahasiswa' && $loan->user_id !== $user->id) {
-            abort(403, 'Unauthorized');
-        }
-        if ($user->role !== 'mahasiswa' && $user->role !== 'petugas') {
-            abort(403, 'Unauthorized');
-        }
+        // Asumsi due_date ada, default 7 hari jika null
+        $loan->due_date = $loan->due_date ?? Carbon::parse($loan->loan_date)->addDays(7);
+        $loan->return_date = Carbon::today();
 
-        // Pastikan buku masih dipinjam
-        if ($loan->status === 'dikembalikan') {
-            return redirect()->route('loans.index')->with('error', 'Buku sudah dikembalikan.');
+        $daysLate = $loan->return_date->diffInDays($loan->due_date, false);
+        if ($daysLate > 0) {
+            $fineRule = \App\Models\FineRule::first();
+            $loan->fine = $daysLate * ($fineRule ? $fineRule->amount_per_day : 0);
         }
 
-        // Perbarui status dan tambah stok
-        $loan->update(['status' => 'dikembalikan']);
+        $loan->save();
         $loan->book->increment('stock');
 
         return redirect()->route('loans.index')->with('success', 'Buku berhasil dikembalikan.');
     }
 }
+

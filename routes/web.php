@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FineRuleController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman utama
@@ -30,13 +31,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:mahasiswa')->get('/mahasiswa/dashboard', [DashboardController::class, 'index'])->name('mahasiswa.dashboard');
 
     // Rute untuk buku
+    // Semua peran: Melihat daftar buku
+    Route::get('/books', [BookController::class, 'index'])->name('books.index');
+
     // Admin dan petugas: Full CRUD
     Route::middleware('role:admin,petugas')->group(function () {
         Route::resource('books', BookController::class)->except(['index']);
     });
-
-    // Semua peran: Melihat daftar buku
-    Route::get('/books', [BookController::class, 'index'])->name('books.index');
 
     // Mahasiswa: Peminjaman buku
     Route::middleware('role:mahasiswa')->post('/books/{book_id}/borrow', [BookController::class, 'borrow'])->name('books.borrow');
@@ -44,4 +45,11 @@ Route::middleware('auth')->group(function () {
     // Peminjaman
     Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
     Route::post('/loans/{loan_id}/return', [LoanController::class, 'return'])->name('loans.return');
+
+    // Pengelolaan aturan denda (hanya untuk admin)
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('fine_rules', FineRuleController::class);
+
+
+    });
 });

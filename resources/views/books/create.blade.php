@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit Buku</title>
+    <title>Tambah Buku</title>
     <link rel="stylesheet" href="{{ asset('css/adminlte.min.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -69,7 +69,7 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1>Edit Buku</h1>
+                        <h1>Tambah Buku</h1>
                     </div>
                 </div>
             </div>
@@ -78,33 +78,32 @@
             <div class="container-fluid">
                 <div class="card">
                     <div class="card-body">
-                        <form action="{{ route('books.update', $book->id) }}" method="POST">
+                        <form action="{{ route('books.store') }}" method="POST">
                             @csrf
-                            @method('PUT')
                             <div class="form-group">
                                 <label for="title">Judul</label>
-                                <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $book->title) }}">
+                                <input type="text" name="title" id="title" class="form-control" value="{{ old('title') }}">
                                 @error('title')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="form-group">
                                 <label for="isbn">Kode ISBN</label>
-                                <input type="text" name="isbn" id="isbn" class="form-control" value="{{ old('isbn', $book->isbn) }}">
+                                <input type="text" name="isbn" id="isbn" class="form-control" value="{{ old('isbn') }}">
                                 @error('isbn')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="form-group">
                                 <label for="author">Penulis</label>
-                                <input type="text" name="author" id="author" class="form-control" value="{{ old('author', $book->author) }}">
+                                <input type="text" name="author" id="author" class="form-control" value="{{ old('author') }}">
                                 @error('author')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="form-group">
                                 <label for="stock">Stok</label>
-                            <input type="number" name="stock" id="stock" class="form-control" value="{{ old('stock', $book->stock) }}">
+                                <input type="number" name="stock" id="stock" class="form-control" value="{{ old('stock') }}">
                                 @error('stock')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror

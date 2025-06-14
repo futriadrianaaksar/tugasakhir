@@ -12,7 +12,7 @@ class BookController extends Controller
 {
     public function index()
     {
-        $books = Book::all();
+        $books = Book::paginate(10); // Tambahkan pagination
         return view('books.index', compact('books'));
     }
 
@@ -24,13 +24,13 @@ class BookController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tittle' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'isbn' => 'required|string|unique:books,isbn|size:13',
             'author' => 'required|string|max:255',
             'stock' => 'required|integer|min:0',
         ]);
 
-        Book::create($request->only(['tittle', 'isbn', 'author', 'stock']));
+        Book::create($request->only(['title', 'isbn', 'author', 'stock']));
 
         return redirect()->route('books.index')->with('success', 'Buku berhasil ditambahkan.');
     }
@@ -46,13 +46,13 @@ class BookController extends Controller
         $book = Book::findOrFail($id);
 
         $request->validate([
-            'tittle' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'isbn' => 'required|string|size:13|unique:books,isbn,' . $book->id,
             'author' => 'required|string|max:255',
             'stock' => 'required|integer|min:0',
         ]);
 
-        $book->update($request->only(['tittle', 'isbn', 'author', 'stock']));
+        $book->update($request->only(['title', 'isbn', 'author', 'stock']));
 
         return redirect()->route('books.index')->with('success', 'Buku berhasil diperbarui.');
     }
@@ -61,7 +61,6 @@ class BookController extends Controller
     {
         $book = Book::findOrFail($id);
 
-        // Cek apakah buku sedang dipinjam
         $activeLoans = Loan::where('book_id', $id)->where('status', 'dipinjam')->exists();
         if ($activeLoans) {
             return redirect()->route('books.index')->with('error', 'Buku sedang dipinjam dan tidak bisa dihapus.');

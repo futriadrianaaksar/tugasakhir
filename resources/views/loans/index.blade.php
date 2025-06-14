@@ -1,60 +1,61 @@
+<!-- resources/views/loans/index.blade.php -->
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h1>Daftar Peminjaman</h1>
-        @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    @if (auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
-                        <th>Peminjam</th>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">Daftar Peminjaman</div>
+                <div class="card-body">
+                    @if (session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
-                    <th>Judul Buku</th>
-                    <th>Tanggal Pinjam</th>
-                    <th>Jatuh Tempo</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($loans as $index => $loan)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        @if (auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
-                            <td>{{ $loan->user->name }}</td>
-                        @endif
-                        <td>{{ $loan->book->tittle }}</td>
-                        <td>{{ $loan->loan_date->format('d-m-Y') }}</td>
-                        <td>{{ $loan->return_due_date->format('d-m-Y') }}</td>
-                        <td>{{ $loan->status }}</td>
-                        <td>
-                            @if ($loan->status === 'dipinjam')
-                                @if (auth()->user()->role === 'mahasiswa' || auth()->user()->role === 'petugas')
-                                    <form action="{{ route('loans.return', $loan->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Kembalikan buku ini?')">Kembalikan</button>
-                                    </form>
-                                @endif
+                    @if (session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Peminjam</th>
+                                <th>Buku</th>
+                                <th>Tanggal Pinjam</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if ($loans->isNotEmpty())
+                                @foreach ($loans as $index => $loan)
+                                    <tr>
+                                        <td>{{ $loans->firstItem() + $index }}</td>
+                                        <td>{{ $loan->user->name }}</td>
+                                        <td>{{ $loan->book->title }}</td>
+                                        <td>{{ $loan->loan_date ? \Carbon\Carbon::parse($loan->loan_date)->format('d-m-Y') : '-' }}</td>
+                                        <td>{{ $loan->status }}</td>
+                                        <td>
+                                            @if ($loan->status == 'borrowed')
+                                                <form action="{{ route('loans.return', $loan->id) }}" method="POST" style="display:inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-primary btn-sm">Kembalikan</button>
+                                                </form>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="6" class="text-center">Belum ada peminjaman.</td>
+                                </tr>
                             @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="{{ auth()->user()->role === 'admin' || auth()->user()->role === 'petugas' ? 6 : 5 }}" class="text-center">Tidak ada peminjaman.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </tbody>
+                    </table>
+                    {{ $loans->links() }}
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 @endsection
+

@@ -6,11 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
-    protected $table = 'books';
-    protected $fillable = ['tittle', 'author', 'isbn', 'stock'];
-
-    public function loans()
-    {
-        return $this->hasMany(Loan::class);
-    }
+    protected $fillable = ['title', 'isbn', 'author', 'stock'];
+    // Ganti 'title', 'isbn', 'author', 'stock' dengan nama kolom yang sesuai di tabel books
 }

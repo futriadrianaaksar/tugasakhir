@@ -1,11 +1,10 @@
 <?php
 
-   namespace App\Models;
+namespace App\Models;
 
-   use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
-   class FineRule extends Model
-   {
-       protected $table = 'fine_rules';
-       protected $fillable = ['amount', 'description'];
-   }
+class FineRule extends Model
+{
+    protected $fillable = ['fine_per_day'];
+}
