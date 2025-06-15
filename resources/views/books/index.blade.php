@@ -4,14 +4,16 @@
 
 @section('content')
     <h1>Daftar Buku</h1>
-    <div class="card">
-        <div class="card-header">
-            <a href="{{ route('admin.books.create') }}" class="btn btn-primary">Tambah Buku</a>
-        </div>
+    <div class="card mb-3">
         <div class="card-body">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
+            <form action="{{ route('books.search') }}" method="GET" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Cari buku..." value="{{ request()->query('search') }}">
+                <button type="submit" class="btn btn-primary">Cari</button>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -19,26 +21,21 @@
                         <th>Penulis</th>
                         <th>ISBN</th>
                         <th>Stok</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($books as $book)
+                    @forelse($books as $book)
                         <tr>
                             <td>{{ $book->title }}</td>
                             <td>{{ $book->author }}</td>
                             <td>{{ $book->isbn }}</td>
                             <td>{{ $book->stock }}</td>
-                            <td>
-                                <a href="{{ route('admin.books.edit', $book->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ route('admin.books.destroy', $book->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus buku ini?')">Hapus</button>
-                                </form>
-                            </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center">Tidak ada buku ditemukan.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

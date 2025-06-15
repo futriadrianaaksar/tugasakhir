@@ -11,16 +11,20 @@ use Carbon\Carbon;
 
 class LoanController extends Controller
 {
+    // Admin: Lihat semua peminjaman
     public function index()
     {
-        $loans = Loan::with(['user', 'book'])->get();
+        $loans = Loan::with(['user', 'book'])->latest()->get();
         return view('admin.loans.index', compact('loans'));
     }
 
-    // Petugas: Melihat peminjaman
+    // Petugas: Lihat peminjaman aktif
     public function petugasIndex()
     {
-        $loans = Loan::with(['user', 'book'])->get();
+        $loans = Loan::with(['user', 'book'])
+                     ->whereIn('status', ['menunggu', 'dipinjam', 'menunggu_pengembalian'])
+                     ->latest()
+                     ->get();
         return view('petugas.loans.index', compact('loans'));
     }
 
@@ -40,6 +44,14 @@ class LoanController extends Controller
             'book_id' => 'required|exists:books,id',
             'loan_date' => 'required|date',
         ]);
+
+        // Cek batas peminjaman (maksimal 3 buku)
+        $activeLoans = Loan::where('user_id', $request->user_id)
+                           ->whereIn('status', ['menunggu', 'dipinjam'])
+                           ->count();
+        if ($activeLoans >= 3) {
+            return back()->withErrors(['user_id' => 'Mahasiswa sudah meminjam maksimal 3 buku.']);
+        }
 
         $book = Book::findOrFail($request->book_id);
         if ($book->stock < 1) {
@@ -65,6 +77,11 @@ class LoanController extends Controller
             return back()->withErrors(['status' => 'Buku sudah dikembalikan.']);
         }
 
+        $fineRule = FineRule::first();
+        if (!$fineRule) {
+            return back()->withErrors(['fine_rule' => 'Aturan denda belum diatur.']);
+        }
+
         $loan->update([
             'return_date' => Carbon::now()->format('Y-m-d'),
             'status' => 'dikembalikan',
@@ -83,6 +100,14 @@ class LoanController extends Controller
         $request->validate([
             'book_id' => 'required|exists:books,id',
         ]);
+
+        // Cek batas peminjaman
+        $activeLoans = Loan::where('user_id', auth()->id())
+                           ->whereIn('status', ['menunggu', 'dipinjam'])
+                           ->count();
+        if ($activeLoans >= 3) {
+            return back()->withErrors(['book_id' => 'Anda sudah meminjam maksimal 3 buku.']);
+        }
 
         $book = Book::findOrFail($request->book_id);
         if ($book->stock < 1) {
@@ -141,6 +166,11 @@ class LoanController extends Controller
             return back()->withErrors(['status' => 'Peminjaman tidak dalam status menunggu pengembalian.']);
         }
 
+        $fineRule = FineRule::first();
+        if (!$fineRule) {
+            return back()->withErrors(['fine_rule' => 'Aturan denda belum diatur.']);
+        }
+
         $loan->update([
             'return_date' => Carbon::now()->format('Y-m-d'),
             'status' => 'dikembalikan',
@@ -151,5 +181,34 @@ class LoanController extends Controller
         $book->increment('stock');
 
         return redirect()->route('petugas.loans.index')->with('success', 'Pengembalian disetujui.');
+    }
+
+    // Petugas: Batalkan peminjaman
+    public function cancel(Request $request, Loan $loan)
+    {
+        if (!in_array($loan->status, ['menunggu', 'dipinjam'])) {
+            return back()->withErrors(['status' => 'Peminjaman tidak dapat dibatalkan.']);
+        }
+
+        if ($loan->status === 'dipinjam') {
+            $book = Book::findOrFail($loan->book_id);
+            $book->increment('stock');
+        }
+
+        $loan->delete();
+
+        return redirect()->route('petugas.loans.index')->with('success', 'Peminjaman berhasil dibatalkan.');
+    }
+
+    // Mahasiswa: Batalkan peminjaman
+    public function mahasiswaCancel(Request $request, Loan $loan)
+    {
+        if ($loan->status !== 'menunggu' || $loan->user_id !== auth()->id()) {
+            return back()->withErrors(['status' => 'Peminjaman tidak dapat dibatalkan.']);
+        }
+
+        $loan->delete();
+
+        return redirect()->route('mahasiswa.dashboard')->with('success', 'Permintaan peminjaman berhasil dibatalkan.');
     }
 }

@@ -69,6 +69,12 @@
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-primary">Ajukan Pengembalian</button>
                                     </form>
+                                @elseif($loan->status === 'menunggu')
+                                    <form action="{{ route('mahasiswa.loans.cancel', $loan->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin membatalkan peminjaman ini?')">Batalkan</button>
+                                    </form>
                                 @endif
                             </td>
                         </tr>

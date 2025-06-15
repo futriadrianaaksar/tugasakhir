@@ -13,6 +13,16 @@ class BookController extends Controller
         return view('books.index', compact('books'));
     }
 
+    public function search(Request $request)
+    {
+        $search = $request->query('search');
+        $books = Book::where('title', 'like', '%'.$search.'%')
+                     ->orWhere('author', 'like', '%'.$search.'%')
+                     ->orWhere('isbn', 'like', '%'.$search.'%')
+                     ->get();
+        return view('books.index', compact('books'));
+    }
+
     public function create()
     {
         return view('admin.books.create');
