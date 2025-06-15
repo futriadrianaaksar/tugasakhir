@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class FineRule extends Model
 {
-    protected $fillable = ['fine_per_day'];
+    protected $fillable = ['amount_per_day', 'max_days'];
 }

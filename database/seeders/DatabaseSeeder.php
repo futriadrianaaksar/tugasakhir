@@ -70,6 +70,10 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        $this->call(BookSeeder::class);
+        $this->call([
+            BookSeeder::class,
+            FineRuleSeeder::class,
+            LoanSeeder::class,
+        ]);
     }
 }

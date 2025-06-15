@@ -3,31 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\User;
 use App\Models\Loan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        try {
-            // Ambil 5 buku teratas
-            $books = Book::take(5)->get() ?? collect();
-            // Ambil 5 peminjaman teratas berdasarkan peran
-            $loans = Auth::user()->role === 'mahasiswa'
-                ? Loan::where('user_id', Auth::id())->take(5)->get() ?? collect()
-                : Loan::take(5)->get() ?? collect();
-
-            return view('dashboard', compact('books', 'loans'));
-        } catch (\Exception $e) {
-            Log::error('Dashboard error: ' . $e->getMessage());
-            return view('dashboard', [
-                'books' => collect(),
-                'loans' => collect(),
-                'error' => 'Gagal memuat data dashboard. Silakan coba lagi nanti.'
-            ]);
+        if (auth()->user()->role === 'admin') {
+            $books = Book::count();
+            $users = User::whereIn('role', ['petugas', 'mahasiswa'])->count();
+            $loans = Loan::count();
+            $totalFines = Loan::sum('fine_amount');
+            return view('admin.dashboard', compact('books', 'users', 'loans', 'totalFines'));
+        } elseif (auth()->user()->role === 'petugas') {
+            $loans = Loan::with(['user', 'book'])->whereIn('status', ['menunggu', 'dipinjam', 'menunggu_pengembalian'])->get();
+            return view('petugas.dashboard', compact('loans'));
+        } else {
+            $loans = Loan::with(['book'])->where('user_id', auth()->id())->get();
+            $books = Book::where('stock', '>', 0)->get();
+            return view('mahasiswa.dashboard', compact('loans', 'books'));
         }
     }
 }

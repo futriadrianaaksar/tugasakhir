@@ -1,41 +1,155 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Loan;
+use App\Models\User;
+use App\Models\Book;
+use App\Models\FineRule;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class LoanController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->role === 'mahasiswa') {
-            $loans = Loan::where('user_id', Auth::id())->paginate(10);
-        } else {
-            $loans = Loan::paginate(10);
-        }
-        return view('loans.index', compact('loans'));
+        $loans = Loan::with(['user', 'book'])->get();
+        return view('admin.loans.index', compact('loans'));
     }
 
-    public function return(Request $request, $loan_id)
+    // Petugas: Melihat peminjaman
+    public function petugasIndex()
     {
-        $loan = Loan::findOrFail($loan_id);
-        $loan->status = 'dikembalikan';
+        $loans = Loan::with(['user', 'book'])->get();
+        return view('petugas.loans.index', compact('loans'));
+    }
 
-        // Asumsi due_date ada, default 7 hari jika null
-        $loan->due_date = $loan->due_date ?? Carbon::parse($loan->loan_date)->addDays(7);
-        $loan->return_date = Carbon::today();
+    // Petugas: Form peminjaman baru
+    public function create()
+    {
+        $users = User::where('role', 'mahasiswa')->get();
+        $books = Book::where('stock', '>', 0)->get();
+        return view('petugas.loans.create', compact('users', 'books'));
+    }
 
-        $daysLate = $loan->return_date->diffInDays($loan->due_date, false);
-        if ($daysLate > 0) {
-            $fineRule = \App\Models\FineRule::first();
-            $loan->fine = $daysLate * ($fineRule ? $fineRule->amount_per_day : 0);
+    // Petugas: Simpan peminjaman
+    public function store(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'book_id' => 'required|exists:books,id',
+            'loan_date' => 'required|date',
+        ]);
+
+        $book = Book::findOrFail($request->book_id);
+        if ($book->stock < 1) {
+            return back()->withErrors(['book_id' => 'Stok buku tidak cukup.']);
         }
 
-        $loan->save();
-        $loan->book->increment('stock');
+        $book->decrement('stock');
 
-        return redirect()->route('loans.index')->with('success', 'Buku berhasil dikembalikan.');
+        Loan::create([
+            'user_id' => $request->user_id,
+            'book_id' => $request->book_id,
+            'loan_date' => $request->loan_date,
+            'status' => 'dipinjam',
+        ]);
+
+        return redirect()->route('petugas.loans.index')->with('success', 'Peminjaman berhasil dicatat.');
+    }
+
+    // Petugas: Tandai pengembalian
+    public function returnBook(Request $request, Loan $loan)
+    {
+        if ($loan->status === 'dikembalikan') {
+            return back()->withErrors(['status' => 'Buku sudah dikembalikan.']);
+        }
+
+        $loan->update([
+            'return_date' => Carbon::now()->format('Y-m-d'),
+            'status' => 'dikembalikan',
+            'fine_amount' => $loan->calculateFine(),
+        ]);
+
+        $book = Book::findOrFail($loan->book_id);
+        $book->increment('stock');
+
+        return redirect()->route('petugas.loans.index')->with('success', 'Pengembalian berhasil dicatat.');
+    }
+
+    // Mahasiswa: Ajukan peminjaman
+    public function mahasiswaRequest(Request $request)
+    {
+        $request->validate([
+            'book_id' => 'required|exists:books,id',
+        ]);
+
+        $book = Book::findOrFail($request->book_id);
+        if ($book->stock < 1) {
+            return back()->withErrors(['book_id' => 'Stok buku tidak cukup.']);
+        }
+
+        Loan::create([
+            'user_id' => auth()->id(),
+            'book_id' => $request->book_id,
+            'loan_date' => Carbon::now()->format('Y-m-d'),
+            'status' => 'menunggu',
+        ]);
+
+        return redirect()->route('mahasiswa.dashboard')->with('success', 'Permintaan peminjaman telah diajukan.');
+    }
+
+    // Petugas: Setujui peminjaman
+    public function approve(Request $request, Loan $loan)
+    {
+        if ($loan->status !== 'menunggu') {
+            return back()->withErrors(['status' => 'Peminjaman tidak dalam status menunggu.']);
+        }
+
+        $book = Book::findOrFail($loan->book_id);
+        if ($book->stock < 1) {
+            return back()->withErrors(['book_id' => 'Stok buku tidak cukup.']);
+        }
+
+        $book->decrement('stock');
+
+        $loan->update([
+            'status' => 'dipinjam',
+        ]);
+
+        return redirect()->route('petugas.loans.index')->with('success', 'Peminjaman disetujui.');
+    }
+
+    // Mahasiswa: Ajukan pengembalian
+    public function mahasiswaReturn(Request $request, Loan $loan)
+    {
+        if ($loan->status !== 'dipinjam' || $loan->user_id !== auth()->id()) {
+            return back()->withErrors(['status' => 'Peminjaman tidak valid untuk pengembalian.']);
+        }
+
+        $loan->update([
+            'status' => 'menunggu_pengembalian',
+        ]);
+
+        return redirect()->route('mahasiswa.dashboard')->with('success', 'Permintaan pengembalian telah diajukan.');
+    }
+
+    // Petugas: Setujui pengembalian
+    public function approveReturn(Request $request, Loan $loan)
+    {
+        if ($loan->status !== 'menunggu_pengembalian') {
+            return back()->withErrors(['status' => 'Peminjaman tidak dalam status menunggu pengembalian.']);
+        }
+
+        $loan->update([
+            'return_date' => Carbon::now()->format('Y-m-d'),
+            'status' => 'dikembalikan',
+            'fine_amount' => $loan->calculateFine(),
+        ]);
+
+        $book = Book::findOrFail($loan->book_id);
+        $book->increment('stock');
+
+        return redirect()->route('petugas.loans.index')->with('success', 'Pengembalian disetujui.');
     }
 }
-

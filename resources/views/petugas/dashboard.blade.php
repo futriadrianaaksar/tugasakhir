@@ -1,13 +1,58 @@
 @extends('layouts.app')
 
-      @section('content')
-          <div class="bg-white p-6 rounded-lg shadow">
-              <h1 class="text-2xl font-bold mb-4">Dashboard Petugas</h1>
-              <p>Selamat datang, {{ Auth::user()->name }}! Anda dapat mengelola buku dan peminjaman.</p>
-              <div class="mt-4 space-x-2">
-                  <a href="{{ route('books.index') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Kelola Buku</a>
-                  <a href="{{ route('profile.edit') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Profil</a>
-                  <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Kelola Peminjaman</a>
-              </div>
-          </div>
-      @endsection
+@section('title', 'Dashboard Petugas')
+
+@section('content')
+    <h1>Dashboard Petugas</h1>
+    <div class="card">
+        <div class="card-header">
+            <a href="{{ route('petugas.loans.create') }}" class="btn btn-primary">Catat Peminjaman Baru</a>
+        </div>
+        <div class="card-body">
+            <h5>Daftar Peminjaman</h5>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Peminjam</th>
+                        <th>Buku</th>
+                        <th>Tanggal Pinjam</th>
+                        <th>Tanggal Kembali</th>
+                        <th>Status</th>
+                        <th>Denda (Rp)</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($loans as $loan)
+                        <tr>
+                            <td>{{ $loan->user->name }}</td>
+                            <td>{{ $loan->book->title }}</td>
+                            <td>{{ $loan->loan_date }}</td>
+                            <td>{{ $loan->return_date ?? '-' }}</td>
+                            <td>{{ $loan->status }}</td>
+                            <td>{{ number_format($loan->fine_amount, 2) }}</td>
+                            <td>
+                                @if($loan->status === 'menunggu')
+                                    <form action="{{ route('petugas.loans.approve', $loan->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success">Setujui</button>
+                                    </form>
+                                @elseif($loan->status === 'dipinjam')
+                                    <form action="{{ route('petugas.loans.return', $loan->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-primary">Kembalikan</button>
+                                    </form>
+                                @elseif($loan->status === 'menunggu_pengembalian')
+                                    <form action="{{ route('petugas.loans.approve_return', $loan->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success">Setujui Pengembalian</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+@endsection
