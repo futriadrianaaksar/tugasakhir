@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
@@ -14,24 +13,19 @@ Route::get('/', function () {
 require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
-    // Dashboard Umum
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Dashboard per Peran
     Route::middleware('role:admin')->get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::middleware('role:petugas')->get('/petugas/dashboard', [DashboardController::class, 'index'])->name('petugas.dashboard');
     Route::middleware('role:mahasiswa')->get('/mahasiswa/dashboard', [DashboardController::class, 'index'])->name('mahasiswa.dashboard');
 
-    // Buku (Akses Umum)
     Route::get('/books', [BookController::class, 'index'])->name('books.index');
     Route::get('/books/search', [BookController::class, 'search'])->name('books.search');
 
-    // Buku untuk Admin dan Petugas
     Route::middleware('role:admin,petugas')->group(function () {
         Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
     });
 
-    // Admin: Kelola Semua
     Route::middleware('role:admin')->group(function () {
         Route::resource('admin/books', BookController::class)->names([
             'index' => 'admin.books.index',
@@ -65,7 +59,6 @@ Route::middleware('auth')->group(function () {
         ]);
     });
 
-    // Petugas: Kelola Peminjaman
     Route::middleware('role:petugas')->group(function () {
         Route::get('/petugas/loans', [LoanController::class, 'petugasIndex'])->name('petugas.loans.index');
         Route::get('/petugas/loans/create', [LoanController::class, 'create'])->name('petugas.loans.create');
@@ -76,7 +69,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/petugas/loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('petugas.loans.cancel');
     });
 
-    // Mahasiswa: Peminjaman dan Pengembalian
     Route::middleware('role:mahasiswa')->group(function () {
         Route::post('/mahasiswa/loans', [LoanController::class, 'mahasiswaRequest'])->name('mahasiswa.loans.request');
         Route::post('/mahasiswa/loans/{loan}/return', [LoanController::class, 'mahasiswaReturn'])->name('mahasiswa.loans.return');

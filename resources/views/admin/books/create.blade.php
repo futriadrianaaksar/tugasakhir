@@ -1,37 +1,45 @@
 @extends('layouts.app')
 
+@section('title', 'Tambah Buku')
+
 @section('content')
-    <h1>Tambah Buku</h1>
     <div class="card">
+        <div class="card-header">
+            <h5>Tambah Buku</h5>
+        </div>
         <div class="card-body">
-            @if($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
             <form action="{{ route('admin.books.store') }}" method="POST">
                 @csrf
-                <div class="form-group">
-                    <label>Judul</label>
-                    <input type="text" name="title" class="form-control" value="{{ old('title') }}" required>
+                <div class="mb-3">
+                    <label for="title" class="form-label">Judul</label>
+                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}">
+                    @error('title')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
-                <div class="form-group">
-                    <label>Penulis</label>
-                    <input type="text" name="author" class="form-control" value="{{ old('author') }}" required>
+                <div class="mb-3">
+                    <label for="author" class="form-label">Penulis</label>
+                    <input type="text" name="author" id="author" class="form-control @error('author') is-invalid @enderror" value="{{ old('author') }}">
+                    @error('author')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
-                <div class="form-group">
-                    <label>ISBN</label>
-                    <input type="text" name="isbn" class="form-control" value="{{ old('isbn') }}" required>
+                <div class="mb-3">
+                    <label for="isbn" class="form-label">ISBN</label>
+                    <input type="text" name="isbn" id="isbn" class="form-control @error('isbn') is-invalid @enderror" value="{{ old('isbn') }}">
+                    @error('isbn')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
-                <div class="form-group">
-                    <label>Stok</label>
-                    <input type="number" name="stock" class="form-control" value="{{ old('stock') }}" required>
+                <div class="mb-3">
+                    <label for="stock" class="form-label">Stok</label>
+                    <input type="number" name="stock" id="stock" class="form-control @error('stock') is-invalid @enderror" value="{{ old('stock') }}" min="0">
+                    @error('stock')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Simpan</button>
+                <a href="{{ route('admin.books.index') }}" class="btn btn-secondary">Batal</a>
             </form>
         </div>
     </div>
